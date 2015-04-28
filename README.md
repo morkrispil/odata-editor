@@ -1,2 +1,2 @@
 # odata-editor
-OData simple view &amp; edit javascript library (WIP)
+[OData](http://www.odata.org) simple view &amp; edit javascript library (WIP)
