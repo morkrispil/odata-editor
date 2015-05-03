@@ -5,19 +5,37 @@
     <script type="text/javascript" src="odata-editor.js"></script>
 
     <script type="text/javascript">
-        var uischema = {
-            Product: {},
-            ProductDetail: {},
-            Category: {},
-            Supplier: {},
-            Person: {}
-        };
-
         var odata = null;
         window.addEventListener("load", init);
 
         function init() {
-            odata = odataEditor.init("http://services.odata.org/Experimental/OData/(S(agopmg5rkklhf24n0rv4q3u4))/OData.svc", uischema);
+            document.getElementById("go").addEventListener("click", function () {
+                var uriElm = document.getElementById("baseUri");
+                var uischemaElm = document.getElementById("uischema");
+
+                if (!uriElm.value) {
+                    uriElm.focus();
+                    return;
+                }
+                if (!uischemaElm.value) {
+                    uischemaElm.focus();
+                    return;
+                }
+
+                var uischema = {};
+                try {
+                    uischema = JSON.parse(uischemaElm.value);
+                } catch (e) {
+                    uischemaElm.focus();
+                    return;
+                }
+
+                go(uriElm.value, uischema);
+            });
+        }
+
+        function go(uri, uischema) {
+            odata = odataEditor.init(uri, uischema);
 
             var first = null;
             var sb = [];
@@ -49,9 +67,23 @@
         #entities {
             font-size: 2em;
         }
+
+        #baseUri {
+            min-width: 400px;
+        }
     </style>
 </head>
 <body>
+    <span>Paste an OData Uri and a JSON ui-schema and Go!</span>
+    <br />
+    <input type="text" id="baseUri" value="http://services.odata.org/Experimental/OData/(S(agopmg5rkklhf24n0rv4q3u4))/OData.svc" /><input type="button" id="go" value="Go!" />
+    <br />
+    <textarea id="uischema" rows="10">
+{
+"Person":{}, "Product":{}, "ProductDetail":{}
+}
+    </textarea>
+    <br />
     <select id="entities"></select>
     <div id="odataContainer"></div>
 </body>
