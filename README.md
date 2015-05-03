@@ -1,28 +1,42 @@
 # odata-editor
-<a href="http://odata.org" target="_blank">OData</a> simple view &amp; edit javascript library (WIP).
+**<a href="http://odata.org" target="_blank">OData</a> simple view &amp; edit javascript library (WIP).**
 
 
-In short, <a href="http://odata.org" target="_blank">OData</a> allows for full REST operations against some server "schema".
+In short, <a href="http://odata.org" target="_blank">OData</a> allows for REST operations against a server "schema".
 
 odata-editor makes your backoffice and admin table-data-entry easy as web :)
-You'll need OData support on your server.
+You'll need OData support on your server, obviously. The OData schema represents a database ORM or just an object model.
+Some projects include:
+* http://olingo.apache.org/
+* https://code.google.com/p/odata4j/
+* https://www.npmjs.com/package/odata-server
+* https://msdn.microsoft.com/en-us/data/odata.aspx
 
 Key features:
-* Read and process the original schema, including: entity and column properties, PKs and FKs
-* Filter and enhance schema against a provided ui-schema
-* Genreate an appropriate html table for either: read only or data entry
-* Handles data entry and FKs validation according to the schema
-* Handles REST operations: GET, POST, PATCH and DELETE
-* Handles a simple user experience for the responses and errors
+* Reading and processing of the server schema, including: entity and column properties, PKs and FKs
+* Filtering and enhancing the schema using a provided ui-schema
+* Genreating the appropriate html table for either read or write modes
+* Handling data entry and FKs validation according to the server schema
+* Handling REST operations: GET, POST, PATCH and DELETE
+* Providing a simple user experience for the responses and errors
 * 100% pure javascript
 
 Simple usage:
 * Provide an OData service uri
-* Provide a ui-schema json (display names, read / write access and more)
+* Provide a ui-schema json (display names, read / write flags and more)
 * Provide an html container id, for the generated html
 
-See the test page for a simple running example.
-Looking for more contributers for enhancing and localization support :)
+```javascript
+var uischema = {
+  "Person":{"text":"people"},
+  "Product":{"text": "products", "readonly":true},
+  "ProductDetail":{}
+}
+var odata = odataEditor.init("path/to/base/odata/service", uischema);
+odata.genTables("odataContainerDiv", "ProductDetail");
+```
+
+Check the included test page for a simple running example.
 
 Supported types:
 * Edm.Int16
@@ -39,4 +53,5 @@ Supportes languages:
 * He
 * TODO: more
 
+**I'm looking for contributors for enhancing and localization support :)**
 
