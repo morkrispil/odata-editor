@@ -28,9 +28,9 @@ Simple usage:
 
 ```javascript
 var uischema = {
-  "Person":{"text":"people"},
-  "Product":{"text": "products", "readonly":true},
-  "ProductDetail":{}
+  "Person" : {"text" : "people"}, //custom entity name
+  "Product" : {"text" : "products", "readonly" : true}, //readonly flag
+  "ProductDetail" : {} //all columns
 }
 var odata = odataEditor.init("path/to/base/odata/service", uischema);
 odata.genTables("odataContainerDiv", "ProductDetail");
