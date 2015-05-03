@@ -68,19 +68,22 @@
             font-size: 2em;
         }
 
-        #baseUri {
+        #baseUri, #uischema {
             min-width: 400px;
         }
     </style>
 </head>
 <body>
     <span>Paste an OData Uri and a JSON ui-schema and Go!</span>
+    <input type="button" id="go" value="Go!" />
     <br />
-    <input type="text" id="baseUri" value="http://services.odata.org/Experimental/OData/(S(agopmg5rkklhf24n0rv4q3u4))/OData.svc" /><input type="button" id="go" value="Go!" />
+    <input type="text" id="baseUri" value="http://services.odata.org/Experimental/OData/(S(agopmg5rkklhf24n0rv4q3u4))/OData.svc" />
     <br />
     <textarea id="uischema" rows="10">
 {
-"Person":{}, "Product":{}, "ProductDetail":{}
+"Person":{"text":"people"},
+"Product":{"text": "products", "readonly":true},
+"ProductDetail":{}
 }
     </textarea>
     <br />
