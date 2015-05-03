@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OData Editor - test page</title>
+    <script type="text/javascript" src="odata-editor.js"></script>
+
+    <script type="text/javascript">
+        var uischema = {
+            Product: {},
+            ProductDetail: {},
+            Category: {},
+            Supplier: {},
+            Person: {}
+        };
+
+        var odata = null;
+        window.addEventListener("load", init);
+
+        function init() {
+            odata = odataEditor.init("http://services.odata.org/Experimental/OData/(S(agopmg5rkklhf24n0rv4q3u4))/OData.svc", uischema);
+
+            var first = null;
+            var sb = [];
+            for (var entityName in odataEditor.uischema) {
+                var entity = odataEditor.uischema[entityName];
+                first = first || entityName;
+                sb.push("<option value=\"");
+                sb.push(entityName);
+                sb.push("\">");
+                sb.push(entity.text);
+                sb.push("</option>");
+            }
+            var select = document.getElementById("entities");
+            select.innerHTML = sb.join("");
+            select.addEventListener("change", function () { loadTable(this.children[this.selectedIndex].value) });
+
+            if (first) {
+                loadTable(first);
+            }
+        }
+
+        function loadTable(entityName) {
+            odata.genTables("odataContainer", entityName);
+            document.getElementById("entities").focus();
+        }
+
+    </script>
+    <style>
+        #entities {
+            font-size: 2em;
+        }
+    </style>
+</head>
+<body>
+    <select id="entities"></select>
+    <div id="odataContainer"></div>
+</body>
+</html>
