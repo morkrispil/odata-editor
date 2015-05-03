@@ -53,5 +53,5 @@ Supportes languages:
 * He
 * TODO: more
 
-**I'm looking for contributors for enhancing and localization support :)**
+**I'm looking for contributors for enhancements and localization support :)**
 
