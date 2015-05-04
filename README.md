@@ -7,10 +7,10 @@ In short, <a href="http://odata.org" target="_blank">OData</a> allows for REST o
 odata-editor makes your backoffice and admin table-data-entry easy as web :)
 You'll need OData support on your server, obviously. The OData schema represents a database ORM or just an object model.
 Some projects include:
-* http://olingo.apache.org/
-* https://code.google.com/p/odata4j/
-* https://www.npmjs.com/package/odata-server
-* https://msdn.microsoft.com/en-us/data/odata.aspx
+* <a href="http://olingo.apache.org/" target="_blank">olingo.apache.org</a>
+* <a href="https://code.google.com/p/odata4j/" target="_blank">odata4j</a>
+* <a href="https://www.npmjs.com/package/odata-server" target="_blank">nodejs</a>
+* <a href="https://msdn.microsoft.com/en-us/data/odata.aspx" target="_blank">wcf odata</a>
 
 Key features:
 * Reading and processing of the server schema, including: entity and column properties, PKs and FKs
