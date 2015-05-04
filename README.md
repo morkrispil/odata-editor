@@ -43,7 +43,6 @@ Supported types:
 * Edm.Int32
 * Edm.String
 * Edm.Boolean
-* Edm.DateTime
 * Edm.Decimal
 * Edm.Double
 * TODO: date time
