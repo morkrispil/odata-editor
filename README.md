@@ -28,10 +28,10 @@ Simple usage:
 
 ```javascript
 var uischema = {
-	Person:{text : "people", orderby : "Name desc", top : 2, filter : "ID gt 0"}, //using orderby, top and filter
-	Product:{text : "products", readonly : true}, //readonly entity
-	ProductDetail : {columns: { //column selection and specification
-		ProductID: {text: "Product Code", readonly: true}}
+	Person : { text : "people", orderby : "Name desc", top : 2, filter : "ID gt 0" }, //using orderby, top and filter
+	Product : { text : "products", readonly : true }, //readonly entity
+	ProductDetail : { columns : { //column selection and specification
+		ProductID : { text: "Product Code", readonly: true }}
 	}
 };
 var odata = odataEditor.init("path/to/base/odata/service", uischema);
