@@ -13,6 +13,8 @@ function () {
         };
     }
 
+    var timezoneOffsetMin = (new Date()).getTimezoneOffset();
+
     var escapeHtml = function (s) {
         return s ? s
              .replace(/&/g, "&amp;")
@@ -95,6 +97,7 @@ function () {
             error_deleting: "Error deleting - ",
             in_use_in_table: " is in use in table ",
             invalid_number: " invalid number value ",
+            invalid_datetime: "invalid date-time value",
             insert_error_key: "Error, key exists",
             error: "Error occurred",
             add: "Add",
@@ -112,6 +115,7 @@ function () {
             error_deleting: "שגיאת מחיקה - ",
             in_use_in_table: " בשימוש בטבלת ",
             invalid_number: " ערך מספרי שגוי ",
+            invalid_datetime: "ערך תאריך-זמן שגוי",
             insert_error_key: "שגיאת הוספה - מפתח קיים",
             error: "ארעה שגיאה",
             add: "הוסף",
@@ -132,7 +136,7 @@ function () {
     var editableInt = function (column, entry, andUpdate) {
         var uientity = odataEditor.uischema[column.EntityName];
 
-        if (entry && column.__isPk || uientity.readonly) {
+        if (entry && (column.__isPk || uientity.readonly || column.readonly)) {
             return entry[column.Name];
         }
 
@@ -149,7 +153,7 @@ function () {
             sb.push(entry[column.Name]);
             sb.push("\"");
         }
-        sb.push(uientity.readonly ? " disabled" : "");
+        sb.push(uientity.readonly || column.readonly ? " disabled" : "");
         sb.push(">")
 
         return sb.join("");
@@ -158,7 +162,7 @@ function () {
     var editableDecimal = function (column, entry, andUpdate) {
         var uientity = odataEditor.uischema[column.EntityName];
 
-        if (entry && column.__isPk || uientity.readonly) {
+        if (entry && (column.__isPk || uientity.readonly || column.readonly)) {
             return parseFloat(entry[column.Name]).toFixed(2);
         }
 
@@ -175,7 +179,7 @@ function () {
             sb.push(parseFloat(entry[column.Name]).toFixed(2));
             sb.push("\"");
         }
-        sb.push(uientity.readonly ? " disabled" : "");
+        sb.push(uientity.readonly || column.readonly ? " disabled" : "");
         sb.push(">")
 
         return sb.join("");
@@ -184,7 +188,7 @@ function () {
     var editableStr = function (column, entry, andUpdate) {
         var uientity = odataEditor.uischema[column.EntityName];
 
-        if (entry && column.__isPk || uientity.readonly) {
+        if (entry && (column.__isPk || uientity.readonly || column.readonly)) {
             return entry[column.Name];
         }
 
@@ -201,7 +205,7 @@ function () {
             sb.push(escapeHtml(entry[column.Name]));
             sb.push("\"");
         }
-        sb.push(uientity.readonly ? " disabled" : "");
+        sb.push(uientity.readonly || column.readonly ? " disabled" : "");
         sb.push(">")
 
         return sb.join("");
@@ -220,15 +224,42 @@ function () {
         if (entry != null) {
             sb.push(entry[column.Name] == true ? "checked " : "");
         }
-        sb.push(uientity.readonly ? " disabled" : "");
+        sb.push(uientity.readonly || column.readonly ? " disabled" : "");
         sb.push(">")
 
         return sb.join("");
     }
 
-    var editableDateTime = function (column, entry) {
-        //TODO
-        return entry != null ? entry[column.Name] : column.Name;
+    var editableDateTime = function (column, entry, andUpdate) {
+        var uientity = odataEditor.uischema[column.EntityName];
+
+        var d;
+        if (entry) {
+            d = getDateWithoutTimezone(entry[column.Name]);
+        }
+
+        if (entry && (column.__isPk || uientity.readonly || column.readonly)) {
+            return d.toString() == "Invalid Date" ? "N/A" : d.toLocaleString();
+            //return entry[column.Name];
+        }
+
+        var sb = [];
+        sb.push("<input type=\"text\" id=\"");
+        sb.push(getPkId(column, entry));
+        sb.push("\" onchange=\"odataEditor.__validateDateTime(event, ");
+        sb.push(andUpdate);
+        sb.push(");\" ");
+
+        if (entry != null) {
+            sb.push("value=\"");
+            sb.push(d.toString() == "Invalid Date" ? "N/A" : d.toLocaleString());
+            //sb.push(entry[column.Name]);
+            sb.push("\"");
+        }
+        sb.push(uientity.readonly || column.readonly ? " disabled" : "");
+        sb.push(">")
+
+        return sb.join("");
     }
 
     var stringifyIntBox = function (elm) {
@@ -255,31 +286,31 @@ function () {
     var validators = {
         "Edm.Int16": validateInt,
         "Edm.Int32": validateInt,
+        "Edm.Decimal": validateDecimal,
+        "Edm.Double": validateDecimal,
         "Edm.String": validateStr,
         "Edm.Boolean": validateBoolean,
-        "Edm.DateTime": validateDateTime,
-        "Edm.Decimal": validateDecimal,
-        "Edm.Double": validateDecimal
+        "Edm.DateTime": validateDateTime
     }
 
     var editables = {
         "Edm.Int16": editableInt,
         "Edm.Int32": editableInt,
+        "Edm.Decimal": editableDecimal,
+        "Edm.Double": editableDecimal,
         "Edm.String": editableStr,
         "Edm.Boolean": editableBoolean,
-        "Edm.DateTime": editableDateTime,
-        "Edm.Decimal": editableDecimal,
-        "Edm.Double": editableDecimal
+        "Edm.DateTime": editableDateTime
     }
 
     var stringifiers = {
         "Edm.Int16": stringifyIntBox,
         "Edm.Int32": stringifyIntBox,
+        "Edm.Decimal": stringifyDecimalBox,
+        "Edm.Double": stringifyDecimalBox,
         "Edm.String": stringifyTextBox,
         "Edm.Boolean": stringifyCheckBox,
-        "Edm.DateTime": stringifyDateTimeBox,
-        "Edm.Decimal": stringifyDecimalBox,
-        "Edm.Double": stringifyDecimalBox
+        "Edm.DateTime": stringifyDateTimeBox
     }
 
     var fkTables = {};
@@ -291,10 +322,30 @@ function () {
         }
 
         var xmlhttp = new XMLHttpRequest();
-        var data = [];
 
-        xmlhttp.open("GET", odataEditor.odataBaseUrl + "/" + uientity.SetName + "?$format=json", false);
+        var sb = [];
+        sb.push(odataEditor.odataBaseUrl);
+        sb.push("/");
+        sb.push(uientity.SetName);
+        sb.push("?");
+        sb.push("$format=json");
+        if (uientity.orderby) {
+            sb.push("&$orderby=");
+            sb.push(uientity.orderby);
+        }
+        if (uientity.top) {
+            sb.push("&$top=");
+            sb.push(uientity.top);
+        }
+        if (uientity.filter) {
+            sb.push("&$filter=");
+            sb.push(uientity.filter);
+        }
+
+        xmlhttp.open("GET", encodeURI(sb.join("")), false);
         xmlhttp.send();
+
+        var data = [];
         data = xmlhttp.responseText;
         data = JSON.parse(xmlhttp.responseText);
         if (data && data.value) {
@@ -345,7 +396,7 @@ function () {
         for (var columnName in entity.columns) {
             var column = entity.columns[columnName];
 
-            if (column.__readonly) {
+            if (column.readonly) {
                 continue;
             }
 
@@ -357,7 +408,7 @@ function () {
             var value = stringifiers[column.Type](elm);
 
             if (value === "" && column.Nullable != "False") {
-                alert(column.__text + getLocalVal("is_mandatory"));
+                alert(column.text + getLocalVal("is_mandatory"));
                 elm.focus();
                 return;
             }
@@ -443,6 +494,8 @@ function () {
     }
 
     var updatedCb = function (verb, keys, data, xmlhttp) {
+        //TODO: just update the updated entry (for when 1 field change triggers another field change)
+        odataEditor.genTables(odataEditor.containerId, odataEditor.currentEntityName);
         alert(getLocalVal("updated"));
     }
 
@@ -472,7 +525,7 @@ function () {
 
             var entity = odataEditor.uischema[tableName];
             var column = entity.columns[columnName];
-            alert(getLocalVal("error_deleting") + column.__text + getLocalVal("in_use_in_table") + entity.text);
+            alert(getLocalVal("error_deleting") + column.text + getLocalVal("in_use_in_table") + entity.text);
         }
         else if (xmlhttp.responseText.indexOf("Cannot insert duplicate key") != -1) {
             //insert duplicate pk-s
@@ -489,7 +542,7 @@ function () {
             sb.push(getLocalVal("insert_error_key"));
             sb.push(" [");
             for (var keyName in entity.keys) {
-                sb.push(entity.columns[keyName].__fk ? entity.columns[keyName].__fk.__descColumn.__text : entity.columns[keyName].__text);
+                sb.push(entity.columns[keyName].__fk ? entity.columns[keyName].__fk.__descColumn.text : entity.columns[keyName].text);
                 sb.push(", ");
             }
             sb.pop();
@@ -685,8 +738,70 @@ function () {
         }
     }
 
-    var validateDateTime = function () {
+    var getDateWithTimezone = function (dateString) {
+        var d = new Date(dateString);
+
+        if (d.toString() != "Invalid Date") {
+            d = new Date(d.getTime() - timezoneOffsetMin * 60 * 1000);
+        }
+
+        return d;
+    }
+
+    var getDateWithoutTimezone = function (dateString) {
+        var d = new Date(dateString);
+
+        if (d.toString() != "Invalid Date") {
+            d = new Date(d.getTime() + timezoneOffsetMin * 60 * 1000);
+        }
+
+        return d;
+    }
+
+    var validateDateTime = function (event, andUpdate) {
         //TODO
+        //new Date(entry[column.Name]).toGMTString()
+        var parsed = parseEvent(event);
+
+        if (parsed.target.value === "" && parsed.column.Nullable != "False") {
+            alert(getLocalVal("mandatory"));
+            parsed.target.value = parsed.target.defaultValue;
+            parsed.target.focus();
+            parsed.preventDefault();
+            return false;
+        }
+
+        var d = getDateWithTimezone(parsed.target.value);
+        if (d.toString() == "Invalid Date") {
+            alert(getLocalVal("invalid_datetime"));
+            parsed.target.value = parsed.target.defaultValue;
+            parsed.target.focus();
+            parsed.preventDefault();
+            return false;
+        }
+
+        if (andUpdate) {
+            if (!confirm(getLocalVal("confirm_update"))) {
+                parsed.target.value = parsed.target.defaultValue;
+                parsed.target.focus();
+                parsed.preventDefault();
+                return false;
+            }
+
+            var keys = {};
+            var ind = 2;
+            for (var keyName in parsed.entity.keys) {
+                keys[keyName] = parsed.args[ind];
+                ind++;
+            }
+
+            var data = {};
+            //data[parsed.columnName] = "datetime'" + parsed.target.value + "'";
+            //data[parsed.columnName] = parsed.target.value;
+            data[parsed.columnName] = d.toISOString();
+
+            restUpdate(parsed.entityName, keys, data);
+        }
     }
 
     var validateFk = function (event, andUpdate) {
@@ -766,7 +881,7 @@ function () {
         var uientity = odataEditor.uischema[column.EntityName];
         var fkTable = fkTables[column.__fk.Name];
 
-        if (entry && (column.__isPk || uientity.readonly)) {
+        if (entry && (column.__isPk || uientity.readonly || column.readonly)) {
             return fkTable[entry[column.Name]];
         }
 
@@ -777,7 +892,7 @@ function () {
         sb.push("\" onchange=\"odataEditor.__validateFk(event, ");
         sb.push(andUpdate);
         sb.push(");\"");
-        sb.push(uientity.readonly ? " disabled" : "");
+        sb.push(uientity.readonly || column.readonly ? " disabled" : "");
         sb.push(">")
 
         for (var key in fkTable) {
@@ -891,8 +1006,8 @@ function () {
                 uicolumn.EntityName = entityName;
 
                 //default text
-                if (!uicolumn.__text) {
-                    uicolumn.__text = columnName;
+                if (!uicolumn.text) {
+                    uicolumn.text = columnName;
                 }
 
                 for (var att in prop["@attributes"]) {
@@ -953,8 +1068,8 @@ function () {
 
                 dependent.__fk = principal;
 
-                if (principal.__descColumnName) {
-                    principal.__descColumn = princEntity.columns[principal.__descColumnName];
+                if (principal.descColumnName) {
+                    principal.__descColumn = princEntity.columns[principal.descColumnName];
                 }
 
                 depEntity.__fks = depEntity.__fks || {};
@@ -996,12 +1111,12 @@ function () {
             for (var columnName in uientity.columns) {
                 var column = uientity.columns[columnName];
 
-                if (column.__readonly || !editables[column.Type]) {
+                if (column.readonly || !editables[column.Type]) {
                     continue;
                 }
 
                 sb.push("<th>");
-                sb.push(column.__fk ? column.__fk.__descColumn.__text : column.__text);
+                sb.push(column.__fk ? column.__fk.__descColumn.text : column.text);
                 sb.push("</th>");
             }
             sb.push("<th></th></thead>");
@@ -1012,7 +1127,7 @@ function () {
                 var column = uientity.columns[columnName];
 
                 //readonly or unsupported types
-                if (column.__readonly || !editables[column.Type]) {
+                if (column.readonly || !editables[column.Type]) {
                     continue;
                 }
 
@@ -1053,7 +1168,7 @@ function () {
             }
 
             sb.push("<th>");
-            sb.push(column.__fk ? column.__fk.__descColumn.__text : column.__text);
+            sb.push(column.__fk ? column.__fk.__descColumn.text : column.text);
             sb.push("</th>");
         }
         sb.push("</thead>");
@@ -1104,15 +1219,14 @@ function () {
 
                 //format according to column type (fk, pk or other value-type)
                 sb.push("<td>");
-                if (column.__readonly || column.__isPk) {
-                    sb.push(column.__fk ? fkTables[column.__fk.Name][entry[column.Name]] : entry[column.Name]);
-                }
-                else {
-                    var editable = column.__fk ? editableFk : editables[column.Type];
-
-                    var andUpdate = true;
-                    sb.push(editable(column, entry, andUpdate));
-                }
+                //if (column.readonly || column.__isPk) {
+                //    sb.push(column.__fk ? fkTables[column.__fk.Name][entry[column.Name]] : entry[column.Name]);
+                //}
+                //else {
+                var editable = column.__fk ? editableFk : editables[column.Type];
+                var andUpdate = true;
+                sb.push(editable(column, entry, andUpdate));
+                //}
                 sb.push("</td>");
             }
             sb.push("</tr>");
