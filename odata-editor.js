@@ -1,5 +1,7 @@
 ﻿(
-function () {
+function (window) {
+    'use strict';
+
     var odataEditor = {
         version: "1.0.0"
     };
@@ -459,11 +461,44 @@ function () {
         return xmlhttp;
     }
 
-    var xhrDone = function (xmlhttp, verb, keys, data) {
+    var custom = function (entityName, customName, keys) {
+        if (!odataEditor.uischema[entityName].custom || !odataEditor.uischema[entityName].custom[customName]) {
+            console.log("custom action " + customName + " not defined");
+            return;
+        }
+
+        var custom = odataEditor.uischema[entityName].custom[customName];
+
+        if (custom.confirm && !confirm(custom.confirm)) {
+            return;
+        }
+
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.open("POST", custom.uri, true);
+        xmlhttp.onreadystatechange = function (event) {
+            xhrDone(event.target, "custom", keys, null, custom);
+        };
+
+        try {
+            console.log("custom action " + customName + "..");
+            document.body.style.cursor = "progress";
+            xmlhttp.send(JSON.stringify(keys));
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    var xhrDone = function (xmlhttp, verb, keys, data, custom) {
         if (xmlhttp.readyState == 4) {
             console.log(xmlhttp.status + " - " + xmlhttp.statusText);
 
-            xhrCbs[xmlhttp.status](verb, keys, data, xmlhttp);
+            var cb = xhrCbs[xmlhttp.status];
+            if (cb) {
+                cb.call(verb, keys, data, xmlhttp);
+            }
+            if (custom) {
+                custom.cb.call(this, custom, keys, xmlhttp);
+            }
 
             document.body.style.cursor = "default";
         }
@@ -920,6 +955,7 @@ function () {
     odataEditor.__validateDecimal = validateDecimal;
     odataEditor.__validateInt = validateInt;
     odataEditor.__validateStr = validateStr;
+    odataEditor.__custom = custom;
 
     odataEditor.set = function (key, val) {
         odataEditor.settings[key] = val;
@@ -1154,10 +1190,19 @@ function () {
 
         //header
         sb.push("<thead>");
+
+        //delete column
         if (!uientity.readonly) {
             sb.push("<th>");
             //sb.push();
             sb.push("</th>");
+        }
+
+        //custom links columns
+        if (uientity.custom) {
+            for (var i in uientity.custom) {
+                sb.push("<th></th>");
+            }
         }
 
         for (var columnName in uientity.columns) {
@@ -1186,26 +1231,51 @@ function () {
             sb.pop();
             sb.push("\">");
 
+
+            var keysSb = [];
+            keysSb.push("{");
+            for (var pkName in uientity.keys) {
+                keysSb.push(pkName)
+                keysSb.push(": ");
+                keysSb.push(["Edm.Int32", "Edm.Decimal"].indexOf(uientity.keys[pkName].Type) == -1 ? "'" : "");
+                keysSb.push(["Edm.Int32", "Edm.Decimal"].indexOf(uientity.keys[pkName].Type) == -1 ? escapeJson(entry[pkName]) : entry[pkName]);
+                keysSb.push(["Edm.Int32", "Edm.Decimal"].indexOf(uientity.keys[pkName].Type) == -1 ? "'" : "");
+                keysSb.push(", ");
+            }
+            keysSb.pop();
+            keysSb.push("}");
+            var keysJson = keysSb.join("");
+
             //delete link
             if (!uientity.readonly) {
                 sb.push("<td>");
                 sb.push("<a href=\"javascript:odataEditor.__restDelete('");
                 sb.push(entityName);
-                sb.push("', {");
-                for (var pkName in uientity.keys) {
-                    sb.push(pkName)
-                    sb.push(": ");
-                    sb.push(["Edm.Int32", "Edm.Decimal"].indexOf(uientity.keys[pkName].Type) == -1 ? "'" : "");
-                    sb.push(["Edm.Int32", "Edm.Decimal"].indexOf(uientity.keys[pkName].Type) == -1 ? escapeJson(entry[pkName]) : entry[pkName]);
-                    //sb.push(entry[pkName]);
-                    sb.push(["Edm.Int32", "Edm.Decimal"].indexOf(uientity.keys[pkName].Type) == -1 ? "'" : "");
-                    sb.push(", ");
-                }
-                sb.pop();
-                sb.push("});\">");
+                sb.push("', ");
+                sb.push(keysJson);
+                sb.push(");\">");
                 sb.push(getLocalVal("delete"));
                 sb.push("</a>");
                 sb.push("</td>");
+            }
+
+            //custom links
+            if (uientity.custom) {
+                for (var customName in uientity.custom) {
+                    var custom = uientity.custom[customName];
+
+                    sb.push("<td>");
+                    sb.push("<a href=\"javascript:odataEditor.__custom('");
+                    sb.push(entityName);
+                    sb.push("', '");
+                    sb.push(customName);
+                    sb.push("', ");
+                    sb.push(keysJson);
+                    sb.push(");\">");
+                    sb.push(custom.text);
+                    sb.push("</a>");
+                    sb.push("</td>");
+                }
             }
 
             //editable fields
@@ -1244,5 +1314,16 @@ function () {
         }
     }
 
-    this.odataEditor = odataEditor;
-})();
+    //window
+    if (!window.odataEditor) {
+        window.odataEditor = odataEditor;
+    }
+
+    //amd
+    if (typeof define === "function" && define.amd) {
+        define("odataEditor", [], function () {
+            return odataEditor;
+        });
+    }
+
+}(typeof window !== 'undefined' ? window : this));
