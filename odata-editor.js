@@ -495,7 +495,7 @@ function (window) {
 
             var cb = xhrCbs[xmlhttp.status];
             if (cb) {
-                cb.call(verb, keys, data, xmlhttp);
+                cb.call(this, verb, keys, data, xmlhttp);
             }
             if (custom) {
                 custom.cb.call(this, custom, keys, xmlhttp);
