@@ -5,6 +5,7 @@ function (window) {
     var odataEditor = {
         version: "1.0.0"
     };
+    odataEditor.settings = { lang: "en" };
 
     //console.log stub
     if (typeof (console) == "undefined") {
@@ -958,12 +959,17 @@ function (window) {
     odataEditor.__custom = custom;
 
     odataEditor.set = function (key, val) {
-        odataEditor.settings[key] = val;
+        if ("undefined" == typeof val) {
+            //get
+            return odataEditor.settings[key];
+        }
+        else {
+            //set
+            odataEditor.settings[key] = val;
+        }
     }
 
     odataEditor.init = function (odataBaseUrl, uischema) {
-        odataEditor.settings = { lang: "en" };
-
         odataEditor.odataBaseUrl = odataBaseUrl;
         odataEditor.uischema = uischema;
 
@@ -1063,6 +1069,9 @@ function (window) {
             for (var j = 0; j < entity.Key[0].PropertyRef.length; j++) {
                 var pkName = entity.Key[0].PropertyRef[j]["@attributes"].Name;
 
+                if (!uientity.columns[pkName]) {
+                    continue;
+                }
                 uientity.columns[pkName].__isPk = true;
                 uientity.keys[pkName] = uientity.columns[pkName];
             }
@@ -1140,7 +1149,13 @@ function (window) {
 
         //draw data entry table
         if (!uientity.readonly) {
-            sb.push("<table border=\"1\">");
+            sb.push("<table");
+            if (odataEditor.set("table_class")) {
+                sb.push(" class=\"");
+                sb.push(odataEditor.set("table_class"));
+                sb.push("\"");
+            }
+            sb.push(">");
 
             //header
             sb.push("<thead>");
@@ -1186,7 +1201,13 @@ function (window) {
         }
 
         //draw data table
-        sb.push("<table border=\"1\">");
+        sb.push("<table");
+        if (odataEditor.set("table_class")) {
+            sb.push(" class=\"");
+            sb.push(odataEditor.set("table_class"));
+            sb.push("\"");
+        }
+        sb.push(">");
 
         //header
         sb.push("<thead>");
