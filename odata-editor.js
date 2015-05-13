@@ -1,5 +1,4 @@
-﻿(
-function (window) {
+﻿(function (window) {
     'use strict';
 
     var odataEditor = {
@@ -1335,16 +1334,12 @@ function (window) {
         }
     }
 
-    //window
-    if (!window.odataEditor) {
-        window.odataEditor = odataEditor;
-    }
+    if (typeof define === 'function' && define.amd) {
+        define(odataEditor);
+    } else if ('undefined' !== typeof exports && 'undefined' !== typeof module) {
+        module.exports = odataEditor;
+    } //else {
+    window.odataEditor = odataEditor;
+    //}
 
-    //amd
-    if (typeof define === "function" && define.amd) {
-        define("odataEditor", [], function () {
-            return odataEditor;
-        });
-    }
-
-}(typeof window !== 'undefined' ? window : this));
+})(window);
