@@ -317,7 +317,7 @@
 
     var fkTables = {};
 
-    var getEntityData = function (entityName) {
+    odataEditor.get = function (entityName) {
         var uientity = odataEditor.uischema[entityName];
         if (!uientity) {
             return null;
@@ -369,7 +369,7 @@
 
         try {
             console.log("deleting from " + entityName + "..");
-            document.body.style.cursor = "progress";
+            document.body.style.cursor = "wait";
             xmlhttp.send();
         } catch (e) {
             console.log(e);
@@ -384,7 +384,7 @@
 
         try {
             console.log("editing " + entityName + "..");
-            document.body.style.cursor = "progress";
+            document.body.style.cursor = "wait";
             xmlhttp.send(JSON.stringify(data));
         } catch (e) {
             console.log(e);
@@ -425,7 +425,7 @@
 
         try {
             console.log("adding new " + entityName + "..");
-            document.body.style.cursor = "progress";
+            document.body.style.cursor = "wait";
             xmlhttp.send(JSON.stringify(data));
         } catch (e) {
             console.log(e);
@@ -481,7 +481,7 @@
 
         try {
             console.log("custom action " + customName + "..");
-            document.body.style.cursor = "progress";
+            document.body.style.cursor = "wait";
             xmlhttp.send(JSON.stringify(keys));
         } catch (e) {
             console.log(e);
@@ -1138,7 +1138,7 @@
 
             //keep an id->desc dic
             fkTables[fk.Name] = {};
-            var data = getEntityData(fk.EntityName);
+            var data = this.get(fk.EntityName);
             for (var i = 0; i < data.length; i++) {
                 var entry = data[i];
 
@@ -1240,7 +1240,7 @@
 
         //body
         sb.push("<tbody>");
-        var data = getEntityData(entityName);
+        var data = this.get(entityName);
         for (var i = 0; i < data.length; i++) {
             var entry = data[i];
             sb.push("<tr id=\"");
