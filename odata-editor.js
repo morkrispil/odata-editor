@@ -329,6 +329,12 @@
         sb.push(odataEditor.odataBaseUrl);
         sb.push("/");
         sb.push(uientity.SetName);
+
+        //pks filter (all pks are mandatory)
+        if (uientity.pksFilter) {
+            sb.push(serializeEntry(entityName, uientity.pksFilter));
+        }
+
         sb.push("?");
         sb.push("$format=json");
         if (uientity.orderby) {
@@ -344,7 +350,10 @@
             sb.push(uientity.filter);
         }
 
-        xmlhttp.open("GET", encodeURI(sb.join("")), false);
+        var url = sb.join("");
+        //url = url.replace(/\\/g, "[BACKSLASH]");
+        url = encodeURI(url);
+        xmlhttp.open("GET", url, false);
         xmlhttp.send();
 
         var data = [];
