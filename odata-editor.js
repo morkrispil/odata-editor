@@ -137,11 +137,6 @@
 
     var editableInt = function (column, entry, andUpdate) {
         var uientity = odataEditor.uischema[column.EntityName];
-
-        if (entry && (column.__isPk || uientity.readonly || column.readonly)) {
-            return entry[column.Name];
-        }
-
         var sb = [];
 
         sb.push("<input type=\"text\" id=\"");
@@ -155,7 +150,9 @@
             sb.push(entry[column.Name]);
             sb.push("\"");
         }
-        sb.push(uientity.readonly || column.readonly ? " disabled" : "");
+
+        sb.push(column.__isPk || uientity.readonly || column.readonly ? " disabled" : "");
+        sb.push(" class=\"odata-editor-int\"");
         sb.push(">")
 
         return sb.join("");
@@ -163,11 +160,6 @@
 
     var editableDecimal = function (column, entry, andUpdate) {
         var uientity = odataEditor.uischema[column.EntityName];
-
-        if (entry && (column.__isPk || uientity.readonly || column.readonly)) {
-            return parseFloat(entry[column.Name]).toFixed(2);
-        }
-
         var sb = [];
 
         sb.push("<input type=\"text\" id=\"");
@@ -181,7 +173,8 @@
             sb.push(parseFloat(entry[column.Name]).toFixed(2));
             sb.push("\"");
         }
-        sb.push(uientity.readonly || column.readonly ? " disabled" : "");
+        sb.push(column.__isPk || uientity.readonly || column.readonly ? " disabled" : "");
+        sb.push(" class=\"odata-editor-decimal\"");
         sb.push(">")
 
         return sb.join("");
@@ -189,11 +182,6 @@
 
     var editableStr = function (column, entry, andUpdate) {
         var uientity = odataEditor.uischema[column.EntityName];
-
-        if (entry && (column.__isPk || uientity.readonly || column.readonly)) {
-            return entry[column.Name];
-        }
-
         var sb = [];
 
         sb.push("<input type=\"text\" id=\"");
@@ -203,11 +191,28 @@
         sb.push(");\" ");
 
         if (entry != null) {
+            var s = escapeHtml(entry[column.Name]);
             sb.push("value=\"");
-            sb.push(escapeHtml(entry[column.Name]));
+            sb.push(s);
             sb.push("\"");
+            //sb.push(" size=\"");
+            //sb.push(s.length);
+            //sb.push("\"");
         }
-        sb.push(uientity.readonly || column.readonly ? " disabled" : "");
+        sb.push(column.__isPk || uientity.readonly || column.readonly ? " disabled" : "");
+
+        if (column.Unicode) {
+            if (column.Unicode == "true") {
+                sb.push(" class=\"odata-editor-string odata-editor-string-unicode\"");
+            }
+            else if (column.Unicode == "false") {
+                sb.push(" class=\"odata-editor-string odata-editor-string-non-unicode\"");
+            }
+        }
+        else {
+            sb.push(" class=\"odata-editor-string\"");
+        }
+
         sb.push(">")
 
         return sb.join("");
@@ -226,7 +231,8 @@
         if (entry != null) {
             sb.push(entry[column.Name] == true ? "checked " : "");
         }
-        sb.push(uientity.readonly || column.readonly ? " disabled" : "");
+        sb.push(column.__isPk || uientity.readonly || column.readonly ? " disabled" : "");
+        sb.push(" class=\"odata-editor-boolean\"");
         sb.push(">")
 
         return sb.join("");
@@ -238,11 +244,6 @@
         var d;
         if (entry) {
             d = getDateWithoutTimezone(entry[column.Name]);
-        }
-
-        if (entry && (column.__isPk || uientity.readonly || column.readonly)) {
-            return d.toString() == "Invalid Date" ? "N/A" : d.toLocaleString();
-            //return entry[column.Name];
         }
 
         var sb = [];
@@ -258,8 +259,44 @@
             //sb.push(entry[column.Name]);
             sb.push("\"");
         }
-        sb.push(uientity.readonly || column.readonly ? " disabled" : "");
+        sb.push(column.__isPk || uientity.readonly || column.readonly ? " disabled" : "");
+        sb.push(" class=\"odata-editor-datetime\"");
         sb.push(">")
+
+        return sb.join("");
+    }
+
+    var editableFk = function (column, entry, andUpdate) {
+        var uientity = odataEditor.uischema[column.EntityName];
+
+        if (column.__isPk || uientity.readonly || column.readonly) {
+            return editableStr(column, entry, andUpdate);
+        }
+
+        var fkTable = fkTables[column.__fk.Name];
+        var sb = [];
+
+        sb.push("<select id=\"");
+        sb.push(getPkId(column, entry));
+        sb.push("\" onchange=\"odataEditor.__validateFk(event, ");
+        sb.push(andUpdate);
+        sb.push(");\"");
+        sb.push(column.__isPk || uientity.readonly || column.readonly ? " disabled" : "");
+        sb.push(" class=\"odata-editor-selectbox\"");
+        sb.push(">")
+
+        for (var key in fkTable) {
+            var value = fkTable[key];
+
+            sb.push("<option value=\"");
+            sb.push(key);
+            sb.push("\"");
+            sb.push((entry != null && entry[column.Name] == key) ? " selected" : "");
+            sb.push(">");
+            sb.push(value);
+            sb.push("</option>");
+        }
+        sb.push("</select>");
 
         return sb.join("");
     }
@@ -920,41 +957,6 @@
         return sb.join("");
     }
 
-    //outputs an editable ui for an existing or new entry
-    var editableFk = function (column, entry, andUpdate) {
-        var uientity = odataEditor.uischema[column.EntityName];
-        var fkTable = fkTables[column.__fk.Name];
-
-        if (entry && (column.__isPk || uientity.readonly || column.readonly)) {
-            return fkTable[entry[column.Name]];
-        }
-
-        var sb = [];
-
-        sb.push("<select id=\"");
-        sb.push(getPkId(column, entry));
-        sb.push("\" onchange=\"odataEditor.__validateFk(event, ");
-        sb.push(andUpdate);
-        sb.push(");\"");
-        sb.push(uientity.readonly || column.readonly ? " disabled" : "");
-        sb.push(">")
-
-        for (var key in fkTable) {
-            var value = fkTable[key];
-
-            sb.push("<option value=\"");
-            sb.push(key);
-            sb.push("\"");
-            sb.push((entry != null && entry[column.Name] == key) ? " selected" : "");
-            sb.push(">");
-            sb.push(value);
-            sb.push("</option>");
-        }
-        sb.push("</select>");
-
-        return sb.join("");
-    }
-
     //"private" exposed function for ui events
     odataEditor.__restDelete = restDelete;
     odataEditor.__restAdd = restAdd;
@@ -1318,6 +1320,7 @@
 
                 //format according to column type (fk, pk or other value-type)
                 sb.push("<td>");
+
                 //if (column.readonly || column.__isPk) {
                 //    sb.push(column.__fk ? fkTables[column.__fk.Name][entry[column.Name]] : entry[column.Name]);
                 //}
