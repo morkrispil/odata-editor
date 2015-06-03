@@ -145,13 +145,18 @@
         sb.push(andUpdate);
         sb.push(");\" ");
 
+        //edit mode
         if (entry != null) {
             sb.push("value=\"");
             sb.push(entry[column.Name]);
             sb.push("\"");
+            sb.push(column.__isPk || uientity.readonly || column.readonly ? " disabled" : "");
+        }
+            //insert mode
+        else {
+            sb.push(uientity.readonly || column.readonly || (column.__isPk && column["p6:StoreGeneratedPattern"] && column["p6:StoreGeneratedPattern"] == "Identity") ? " disabled" : "");
         }
 
-        sb.push(column.__isPk || uientity.readonly || column.readonly ? " disabled" : "");
         sb.push(" class=\"odata-editor-int\"");
         sb.push(">")
 
@@ -168,12 +173,18 @@
         sb.push(andUpdate);
         sb.push(");\" ");
 
+        //edit mode
         if (entry != null) {
             sb.push("value=\"");
             sb.push(parseFloat(entry[column.Name]).toFixed(2));
             sb.push("\"");
+            sb.push(column.__isPk || uientity.readonly || column.readonly ? " disabled" : "");
         }
-        sb.push(column.__isPk || uientity.readonly || column.readonly ? " disabled" : "");
+            //insert mode
+        else {
+            sb.push(uientity.readonly || column.readonly || (column.__isPk && column["p6:StoreGeneratedPattern"] && column["p6:StoreGeneratedPattern"] == "Identity") ? " disabled" : "");
+        }
+
         sb.push(" class=\"odata-editor-decimal\"");
         sb.push(">")
 
@@ -190,22 +201,32 @@
         sb.push(andUpdate);
         sb.push(");\" ");
 
+        //edit mode
         if (entry != null) {
-            var s = escapeHtml(entry[column.Name]);
+            var s = "";
+            s = column.__fk ? fkTables[column.__fk.Name][entry[column.Name]] : entry[column.Name];
+            if (column.Type == "Edm.String") {
+                s = escapeHtml(s);
+            }
             sb.push("value=\"");
             sb.push(s);
             sb.push("\"");
             //sb.push(" size=\"");
             //sb.push(s.length);
             //sb.push("\"");
+            sb.push(column.__isPk || uientity.readonly || column.readonly ? " disabled" : "");
         }
-        sb.push(column.__isPk || uientity.readonly || column.readonly ? " disabled" : "");
+            //insert mode
+        else {
+            sb.push(uientity.readonly || column.readonly || (column.__isPk && column["p6:StoreGeneratedPattern"] && column["p6:StoreGeneratedPattern"] == "Identity") ? " disabled" : "");
+        }
 
-        if (column.Unicode) {
-            if (column.Unicode == "true") {
+        var targetColumn = (column.__fk && column.__fk.__descColumn) ? column.__fk.__descColumn : column;
+        if (targetColumn.Unicode) {
+            if (targetColumn.Unicode == "true") {
                 sb.push(" class=\"odata-editor-string odata-editor-string-unicode\"");
             }
-            else if (column.Unicode == "false") {
+            else if (targetColumn.Unicode == "false") {
                 sb.push(" class=\"odata-editor-string odata-editor-string-non-unicode\"");
             }
         }
@@ -228,10 +249,16 @@
         sb.push(andUpdate);
         sb.push(");\" ");
 
+        //edit mode
         if (entry != null) {
             sb.push(entry[column.Name] == true ? "checked " : "");
+            sb.push(column.__isPk || uientity.readonly || column.readonly ? " disabled" : "");
         }
-        sb.push(column.__isPk || uientity.readonly || column.readonly ? " disabled" : "");
+            //insert mode
+        else {
+            sb.push(uientity.readonly || column.readonly || (column.__isPk && column["p6:StoreGeneratedPattern"] && column["p6:StoreGeneratedPattern"] == "Identity") ? " disabled" : "");
+        }
+
         sb.push(" class=\"odata-editor-boolean\"");
         sb.push(">")
 
@@ -253,13 +280,19 @@
         sb.push(andUpdate);
         sb.push(");\" ");
 
+        //edit mode
         if (entry != null) {
             sb.push("value=\"");
             sb.push(d.toString() == "Invalid Date" ? "N/A" : d.toLocaleString());
             //sb.push(entry[column.Name]);
             sb.push("\"");
+            sb.push(column.__isPk || uientity.readonly || column.readonly ? " disabled" : "");
         }
-        sb.push(column.__isPk || uientity.readonly || column.readonly ? " disabled" : "");
+            //insert mode
+        else {
+            sb.push(uientity.readonly || column.readonly || (column.__isPk && column["p6:StoreGeneratedPattern"] && column["p6:StoreGeneratedPattern"] == "Identity") ? " disabled" : "");
+        }
+
         sb.push(" class=\"odata-editor-datetime\"");
         sb.push(">")
 
@@ -269,7 +302,8 @@
     var editableFk = function (column, entry, andUpdate) {
         var uientity = odataEditor.uischema[column.EntityName];
 
-        if (column.__isPk || uientity.readonly || column.readonly) {
+        //readonly or a pk in edit mode
+        if ((column.__isPk && entry) || uientity.readonly || column.readonly) {
             return editableStr(column, entry, andUpdate);
         }
 
@@ -281,7 +315,8 @@
         sb.push("\" onchange=\"odataEditor.__validateFk(event, ");
         sb.push(andUpdate);
         sb.push(");\"");
-        sb.push(column.__isPk || uientity.readonly || column.readonly ? " disabled" : "");
+        //readonly or a pk in edit mode
+        sb.push((column.__isPk && entry) || uientity.readonly || column.readonly ? " disabled" : "");
         sb.push(" class=\"odata-editor-selectbox\"");
         sb.push(">")
 
