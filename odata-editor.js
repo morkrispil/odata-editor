@@ -1115,7 +1115,7 @@
 
                 //default text
                 if (!uicolumn.text) {
-                    uicolumn.text = column.__fk ? column.__fk.__descColumn.text : columnName;
+                    uicolumn.text = uicolumn.__fk ? uicolumn.__fk.__descColumn.text : columnName;
                 }
 
                 for (var att in prop["@attributes"]) {
