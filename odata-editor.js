@@ -17,6 +17,27 @@
 
     var timezoneOffsetMin = (new Date()).getTimezoneOffset();
 
+    var datetimeformat = function (date, format) {
+        var digitize = function (n) {
+            if (n < 10) {
+                return "0" + n.toString();
+            }
+            else {
+                return n;
+            }
+        };
+
+        return format
+        .replace("yyyy", date.getFullYear().toString())
+        .replace("yy", date.getFullYear().toString().substr(2, 2))
+        .replace("MM", digitize(date.getMonth() + 1))
+        .replace("dd", digitize(date.getDate()))
+        .replace("HH", digitize(date.getHours()))
+        .replace("mm", digitize(date.getMinutes()))
+        .replace("ss", digitize(date.getSeconds()))
+        ;
+    }
+
     var escapeHtml = function (s) {
         return s ? s
              .replace(/&/g, "&amp;")
@@ -283,7 +304,7 @@
         //edit mode
         if (entry != null) {
             sb.push("value=\"");
-            sb.push(d.toString() == "Invalid Date" ? "N/A" : d.toLocaleString());
+            sb.push(d.toString() == "Invalid Date" ? "N/A" : (odataEditor.set("datetimeformat") ? datetimeformat(d, odataEditor.set("datetimeformat")) : d.toLocaleString()));
             //sb.push(entry[column.Name]);
             sb.push("\"");
             sb.push(column.__isPk || uientity.readonly || column.readonly ? " disabled" : "");
@@ -1094,7 +1115,7 @@
 
                 //default text
                 if (!uicolumn.text) {
-                    uicolumn.text = columnName;
+                    uicolumn.text = column.__fk ? column.__fk.__descColumn.text : columnName;
                 }
 
                 for (var att in prop["@attributes"]) {
@@ -1279,7 +1300,7 @@
             }
 
             sb.push("<th>");
-            sb.push(column.__fk ? column.__fk.__descColumn.text : column.text);
+            sb.push(column.text);
             sb.push("</th>");
         }
         sb.push("</thead>");
