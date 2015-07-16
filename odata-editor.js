@@ -51,8 +51,8 @@
     var escapeJson = function (s) {
         return s ? s
             .replace(/\\n/g, "\\n")
-            .replace(/\\'/g, "\\'")
-            .replace(/\\"/g, '\\"')
+            .replace(/\'/g, "\\'")
+            .replace(/\"/g, '\\"')
             .replace(/\\&/g, "\\&")
             .replace(/\\r/g, "\\r")
             .replace(/\\t/g, "\\t")
@@ -178,8 +178,12 @@
             sb.push(uientity.readonly || column.readonly || (column.__isPk && column["p6:StoreGeneratedPattern"] && column["p6:StoreGeneratedPattern"] == "Identity") ? " disabled" : "");
         }
 
-        sb.push(" class=\"odata-editor-int\"");
-        sb.push(">")
+        sb.push(" class=\"odata-editor-int");
+        sb.push(" odata-editor-");
+        sb.push(column.EntityName);
+        sb.push("-");
+        sb.push(column.Name);
+        sb.push("\">");
 
         return sb.join("");
     }
@@ -206,8 +210,12 @@
             sb.push(uientity.readonly || column.readonly || (column.__isPk && column["p6:StoreGeneratedPattern"] && column["p6:StoreGeneratedPattern"] == "Identity") ? " disabled" : "");
         }
 
-        sb.push(" class=\"odata-editor-decimal\"");
-        sb.push(">")
+        sb.push(" class=\"odata-editor-decimal");
+        sb.push(" odata-editor-");
+        sb.push(column.EntityName);
+        sb.push("-");
+        sb.push(column.Name);
+        sb.push("\">");
 
         return sb.join("");
     }
@@ -225,7 +233,7 @@
         //edit mode
         if (entry != null) {
             var s = "";
-            s = column.__fk ? fkTables[column.__fk.Name][entry[column.Name]] : entry[column.Name];
+            s = column.__fk && fkTables[column.Name] ? fkTables[column.Name][entry[column.Name]] : entry[column.Name];
             if (column.Type == "Edm.String") {
                 s = escapeHtml(s);
             }
@@ -245,17 +253,22 @@
         var targetColumn = (column.__fk && column.__fk.__descColumn) ? column.__fk.__descColumn : column;
         if (targetColumn.Unicode) {
             if (targetColumn.Unicode == "true") {
-                sb.push(" class=\"odata-editor-string odata-editor-string-unicode\"");
+                sb.push(" class=\"odata-editor-string odata-editor-string-unicode");
             }
             else if (targetColumn.Unicode == "false") {
-                sb.push(" class=\"odata-editor-string odata-editor-string-non-unicode\"");
+                sb.push(" class=\"odata-editor-string odata-editor-string-non-unicode");
             }
         }
         else {
-            sb.push(" class=\"odata-editor-string\"");
+            sb.push(" class=\"odata-editor-string");
         }
 
-        sb.push(">")
+        sb.push(" odata-editor-");
+
+        sb.push(column.__fk ? column.__fk.EntityName : column.EntityName);
+        sb.push("-");
+        sb.push(column.__fk ? (column.__fk.__descColumn ? column.__fk.__descColumn.Name : column.__fk.Name) : column.Name);
+        sb.push("\">");
 
         return sb.join("");
     }
@@ -280,8 +293,12 @@
             sb.push(uientity.readonly || column.readonly || (column.__isPk && column["p6:StoreGeneratedPattern"] && column["p6:StoreGeneratedPattern"] == "Identity") ? " disabled" : "");
         }
 
-        sb.push(" class=\"odata-editor-boolean\"");
-        sb.push(">")
+        sb.push(" class=\"odata-editor-boolean");
+        sb.push(" odata-editor-");
+        sb.push(column.EntityName);
+        sb.push("-");
+        sb.push(column.Name);
+        sb.push("\">");
 
         return sb.join("");
     }
@@ -314,8 +331,12 @@
             sb.push(uientity.readonly || column.readonly || (column.__isPk && column["p6:StoreGeneratedPattern"] && column["p6:StoreGeneratedPattern"] == "Identity") ? " disabled" : "");
         }
 
-        sb.push(" class=\"odata-editor-datetime\"");
-        sb.push(">")
+        sb.push(" class=\"odata-editor-datetime");
+        sb.push(" odata-editor-");
+        sb.push(column.EntityName);
+        sb.push("-");
+        sb.push(column.Name);
+        sb.push("\">");
 
         return sb.join("");
     }
@@ -328,7 +349,7 @@
             return editableStr(column, entry, andUpdate);
         }
 
-        var fkTable = fkTables[column.__fk.Name];
+        var fkTable = fkTables[column.Name];
         var sb = [];
 
         sb.push("<select id=\"");
@@ -338,8 +359,12 @@
         sb.push(");\"");
         //readonly or a pk in edit mode
         sb.push((column.__isPk && entry) || uientity.readonly || column.readonly ? " disabled" : "");
-        sb.push(" class=\"odata-editor-selectbox\"");
-        sb.push(">")
+        sb.push(" class=\"odata-editor-selectbox");
+        sb.push(" odata-editor-");
+        sb.push(column.__fk.EntityName);
+        sb.push("-");
+        sb.push(column.__fk.__descColumn ? column.__fk.__descColumn.Name : column.__fk.Name);
+        sb.push("\">");
 
         for (var key in fkTable) {
             var value = fkTable[key];
@@ -500,7 +525,7 @@
         for (var columnName in entity.columns) {
             var column = entity.columns[columnName];
 
-            if (column.readonly) {
+            if (column.readonly || (column.__isPk && column["p6:StoreGeneratedPattern"] && column["p6:StoreGeneratedPattern"] == "Identity")) {
                 continue;
             }
 
@@ -511,7 +536,7 @@
 
             var value = stringifiers[column.Type](elm);
 
-            if (value === "" && column.Nullable != "False") {
+            if (value === "" && typeof (column.Nullable) != "undefined" && column.Nullable == "false") {
                 alert(column.text + getLocalVal("is_mandatory"));
                 elm.focus();
                 return;
@@ -549,7 +574,15 @@
         url = url.replace(/\\/g, "[BACKSLASH]");
         var url = encodeURI(url);
 
-        xmlhttp.open(methods[method], url, true);
+        method = methods[method];
+        var reqMethod = odataEditor.set("verb_tunneling") && ["PUT", "DELETE", "MERGE", "PATCH"].indexOf(method) != -1 ? "POST" : method;
+        xmlhttp.open(reqMethod, url, true);
+
+        //Subtitute DELETE, PUT and MERGE for POST, using X-HTTP-Method header. (For blocking servers / FW)
+        if (reqMethod != method) {
+            xmlhttp.setRequestHeader("X-HTTP-Method", method);
+        }
+
         xmlhttp.setRequestHeader("DataServiceVersion", "3.0;NetFx");
         xmlhttp.setRequestHeader("MaxDataServiceVersion", "3.0;NetFx");
         xmlhttp.setRequestHeader("Content-Type", "application/json;odata=minimalmetadata");
@@ -575,18 +608,24 @@
             return;
         }
 
-        var xmlhttp = new XMLHttpRequest();
-        xmlhttp.open("POST", custom.uri, true);
-        xmlhttp.onreadystatechange = function (event) {
-            xhrDone(event.target, "custom", keys, null, custom);
-        };
+        if (custom.method) {
+            custom.method.call(this, custom, keys);
+        }
 
-        try {
-            console.log("custom action " + customName + "..");
-            document.body.style.cursor = "wait";
-            xmlhttp.send(JSON.stringify(keys));
-        } catch (e) {
-            console.log(e);
+        if (custom.uri) {
+            var xmlhttp = new XMLHttpRequest();
+            xmlhttp.open("POST", custom.uri, true);
+            xmlhttp.onreadystatechange = function (event) {
+                xhrDone(event.target, "custom", keys, null, custom);
+            };
+
+            try {
+                console.log("custom action " + customName + "..");
+                document.body.style.cursor = "wait";
+                xmlhttp.send(JSON.stringify(keys));
+            } catch (e) {
+                console.log(e);
+            }
         }
     }
 
@@ -661,8 +700,8 @@
             columnName = columnName.replace("column", "").replace(/\\r\\n/g, "").replace(/\./g, "").replace(/'/g, "").trim();
 
             var entity = odataEditor.uischema[tableName];
-            var column = entity.columns[columnName];
-            alert(getLocalVal("error_deleting") + column.text + getLocalVal("in_use_in_table") + entity.text);
+            var column = entity ? entity.columns[columnName] : null;
+            alert(getLocalVal("error_deleting") + (column ? column.text : columnName) + getLocalVal("in_use_in_table") + (entity ? entity.text : tableName));
         }
         else if (xmlhttp.responseText.indexOf("Cannot insert duplicate key") != -1) {
             //insert duplicate pk-s
@@ -1080,6 +1119,7 @@
             var entitySetName = entitySet["@attributes"].Name;
 
             var entityName = entitySet["@attributes"].EntityType.replace(odataEditor.namespace + ".", "");
+            //var entityName = entitySet["@attributes"].Name;
             var entity = entitiesDic[entityName];
             var uientity = odataEditor.uischema[entityName];
 
@@ -1120,7 +1160,7 @@
 
                 for (var att in prop["@attributes"]) {
                     //irrelevant column attributes
-                    if (["__proto__", "p6:StoreGeneratedPattern", "xmlns:p6"].indexOf(att) != -1) {
+                    if (["__proto__", "xmlns:p6"].indexOf(att) != -1) {
                         continue;
                     }
 
@@ -1151,10 +1191,16 @@
                     continue;
                 }
 
+                var endsEntityRoleDic = {};
+                for (var j = 0; j < fks[i].End.length; j++) {
+                    var end = fks[i].End[j];
+                    endsEntityRoleDic[end["@attributes"].Role] = end["@attributes"].Type.replace(odataEditor.namespace + ".", "");
+                }
+
                 var fk = fks[i].ReferentialConstraint[0];
 
                 //entity not in ui schema
-                var depEntity = odataEditor.uischema[fk.Dependent[0]["@attributes"].Role];
+                var depEntity = odataEditor.uischema[endsEntityRoleDic[fk.Dependent[0]["@attributes"].Role]];
                 if (!depEntity) {
                     continue;
                 }
@@ -1165,7 +1211,7 @@
                     continue;
                 }
 
-                var princEntity = odataEditor.uischema[fk.Principal[0]["@attributes"].Role];
+                var princEntity = odataEditor.uischema[endsEntityRoleDic[fk.Principal[0]["@attributes"].Role]];
                 //entity not in ui schema
                 if (!princEntity) {
                     continue;
@@ -1179,8 +1225,9 @@
 
                 dependent.__fk = principal;
 
-                if (principal.descColumnName) {
-                    principal.__descColumn = princEntity.columns[principal.descColumnName];
+                var descColumn = (principal.descColumnName && princEntity.columns[principal.descColumnName]) || princEntity.columns["Name"] || princEntity.columns["Description"] || princEntity.columns["Desc"];
+                if (descColumn) {
+                    principal.__descColumn = descColumn;
                 }
 
                 depEntity.__fks = depEntity.__fks || {};
@@ -1200,16 +1247,21 @@
 
         //fk temp tables
         fkTables = {};
-        for (var fkName in uientity.__fks) {
-            var fk = uientity.__fks[fkName];
+        for (var columnName in uientity.columns) {
+            var column = uientity.columns[columnName];
+            if (!column.__fk || !column.__fk.__descColumn) {
+                continue;
+            }
+
+            var fk = column.__fk;
 
             //keep an id->desc dic
-            fkTables[fk.Name] = {};
+            fkTables[column.Name] = {};
             var data = this.get(fk.EntityName);
             for (var i = 0; i < data.length; i++) {
                 var entry = data[i];
 
-                fkTables[fk.Name][entry[fk.Name]] = entry[fk.__descColumn.Name];
+                fkTables[column.Name][entry[fk.Name]] = entry[fk.__descColumn.Name];
             }
         }
 
@@ -1233,7 +1285,7 @@
                 }
 
                 sb.push("<th>");
-                sb.push(column.__fk ? column.__fk.__descColumn.text : column.text);
+                sb.push(column.__fk && column.__fk.__descColumn ? column.__fk.__descColumn.text : column.text);
                 sb.push("</th>");
             }
             sb.push("<th></th></thead>");
@@ -1292,6 +1344,15 @@
             }
         }
 
+        //custom html columns
+        if (uientity.html) {
+            for (var i in uientity.html) {
+                sb.push("<th>");
+                sb.push(uientity.html[i].text);
+                sb.push("</th>");
+            }
+        }
+
         for (var columnName in uientity.columns) {
             var column = uientity.columns[columnName];
 
@@ -1307,7 +1368,24 @@
 
         //body
         sb.push("<tbody>");
+
         var data = this.get(entityName);
+        //fk secondary sort. limited to 1 column asc
+        if (uientity.fkOrderBy) {
+            var fkTable = fkTables[uientity.fkOrderBy];
+            if (fkTable && uientity.columns[uientity.fkOrderBy]) {
+                data.sort(function (a, b) {
+                    if (fkTable[a[uientity.fkOrderBy]] < fkTable[b[uientity.fkOrderBy]]) {
+                        return -1;
+                    }
+                    else if (fkTable[a[uientity.fkOrderBy]] > fkTable[b[uientity.fkOrderBy]]) {
+                        return 1;
+                    }
+                    return 0;
+                });
+            }
+        }
+
         for (var i = 0; i < data.length; i++) {
             var entry = data[i];
             sb.push("<tr id=\"");
@@ -1318,20 +1396,11 @@
             sb.pop();
             sb.push("\">");
 
-
-            var keysSb = [];
-            keysSb.push("{");
+            var keysJson = {};
             for (var pkName in uientity.keys) {
-                keysSb.push(pkName)
-                keysSb.push(": ");
-                keysSb.push(["Edm.Int32", "Edm.Decimal"].indexOf(uientity.keys[pkName].Type) == -1 ? "'" : "");
-                keysSb.push(["Edm.Int32", "Edm.Decimal"].indexOf(uientity.keys[pkName].Type) == -1 ? escapeJson(entry[pkName]) : entry[pkName]);
-                keysSb.push(["Edm.Int32", "Edm.Decimal"].indexOf(uientity.keys[pkName].Type) == -1 ? "'" : "");
-                keysSb.push(", ");
+                keysJson[pkName] = entry[pkName];
             }
-            keysSb.pop();
-            keysSb.push("}");
-            var keysJson = keysSb.join("");
+            var keysJson = encodeURIComponent(JSON.stringify(keysJson));
 
             //delete link
             if (!uientity.readonly) {
@@ -1361,6 +1430,19 @@
                     sb.push(");\">");
                     sb.push(custom.text);
                     sb.push("</a>");
+                    sb.push("</td>");
+                }
+            }
+
+            //custom html
+            if (uientity.html) {
+                for (var htmlName in uientity.html) {
+                    var html = uientity.html[htmlName];
+
+                    sb.push("<td>");
+                    if (typeof (html.cb) === "function") {
+                        sb.push(html.cb.call(this, html, entry));
+                    }
                     sb.push("</td>");
                 }
             }

@@ -50,7 +50,7 @@ Supported types:
 * Edm.Boolean
 * Edm.Decimal
 * Edm.Double
-* TODO: date time
+* Edm.DateTime
 
 Supportes languages:
 * En
