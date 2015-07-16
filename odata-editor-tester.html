@@ -3,10 +3,9 @@
 <head>
     <title>OData Editor - test page</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
-    <script type="text/javascript" src="../js/odata-editor.js"></script>
+    <script type="text/javascript" src="odata-editor.js"></script>
 
     <script type="text/javascript">
-        var odata = null;
         window.addEventListener("load", init);
 
         function init() {
@@ -36,8 +35,10 @@
         }
 
         function go(uri, uischema) {
-            odata = odataEditor.init(uri, uischema);
-            odata.set("table_class", "table table-striped table-bordered table-hover");
+            odataEditor.init(uri, uischema);
+            odataEditor.set("table_class", "table table-striped table-bordered table-hover");
+			odataEditor.set("datetimeformat", "dd/MM/yy HH:mm");
+			odataEditor.set("verb_tunneling", true);
 
             var first = null;
             var sb = [];
@@ -60,7 +61,7 @@
         }
 
         function loadTable(entityName) {
-            odata.genTables("odataContainer", entityName);
+            odataEditor.genTables("odataContainer", entityName);
             document.getElementById("entities").focus();
         }
 
@@ -79,7 +80,7 @@
     <span>Paste an odata uri and a json ui-schema and go!</span>
     <input type="button" id="go" value="Go!" />
     <br />
-    <input type="text" id="baseUri" value="http://services.odata.org/Experimental/OData/(S(agopmg5rkklhf24n0rv4q3u4))/OData.svc" />
+    <input type="text" id="baseUri" value="http://services.odata.org/V3/(S(05q5qkboemohigishovrhcxi))/OData/OData.svc" />
     <br />
     <textarea id="uischema" rows="10">
 {

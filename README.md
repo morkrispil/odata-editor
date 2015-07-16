@@ -37,11 +37,18 @@ var uischema = {
                     }
 	}
 };
-var odata = odataEditor.init("path/to/base/odata/service", uischema);
-odata.genTables("odataContainerDiv", "ProductDetail");
+odataEditor.init("http://services.odata.org/V3/(S(05q5qkboemohigishovrhcxi))/OData/OData.svc", uischema);
+odataEditor.genTables("odataContainerDiv", "ProductDetail");
 ```
 
 Check the included test page for a simple running example.
+
+Advanced features:
+* Custom handlers columns
+* Custom html columns
+* Verb tunneling, subtituting DELETE, PUT, PATCH and MERGE for POST, using X-HTTP-Method header. (for blocking servers / FWs)
+* secondary sort by fk column
+
 
 Supported types:
 * Edm.Int16

@@ -578,7 +578,7 @@
         var reqMethod = odataEditor.set("verb_tunneling") && ["PUT", "DELETE", "MERGE", "PATCH"].indexOf(method) != -1 ? "POST" : method;
         xmlhttp.open(reqMethod, url, true);
 
-        //Subtitute DELETE, PUT and MERGE for POST, using X-HTTP-Method header. (For blocking servers / FW)
+        //Subtitute DELETE, PUT, PATCH and MERGE for POST, using X-HTTP-Method header. (For blocking servers / FW)
         if (reqMethod != method) {
             xmlhttp.setRequestHeader("X-HTTP-Method", method);
         }
