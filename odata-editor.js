@@ -124,7 +124,7 @@
             insert_error_key: "Error, key exists",
             error: "Error occurred",
             add: "Add",
-            delete: "Delete"
+            "delete": "Delete"
         },
         "he": {
             confirm_delete: "האם למחוק?",
@@ -142,7 +142,7 @@
             insert_error_key: "שגיאת הוספה - מפתח קיים",
             error: "ארעה שגיאה",
             add: "הוסף",
-            delete: "מחק"
+            "delete": "מחק"
         }
     };
 
@@ -152,7 +152,7 @@
 
     var methods = {
         insert: "POST",
-        delete: "DELETE",
+        "delete": "DELETE",
         update: "PATCH"
     };
 
