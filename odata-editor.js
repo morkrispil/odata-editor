@@ -62,6 +62,10 @@
             : "";
     }
 
+    var cloneObj = function (o) {
+        return JSON.parse(JSON.stringify(o));
+    }
+
     //xml to json snippet; http://davidwalsh.name/convert-xml-json; mit license
     var xmlToJson = function (xml) {
         // Create the return object
@@ -1360,6 +1364,13 @@
                 continue;
             }
 
+            //keep fk itself - an additional column
+            if (column.__fk && column.__fk.__descColumn && column.keepFkWithDesc) {
+                sb.push("<th>");
+                sb.push(column.__fk.text);
+                sb.push("</th>");
+            }
+
             sb.push("<th>");
             sb.push(column.text);
             sb.push("</th>");
@@ -1451,22 +1462,31 @@
             for (var columnName in uientity.columns) {
                 var column = uientity.columns[columnName];
 
-                //readonly or unsupported types
+                //unsupported types
                 if (!column || !editables[column.Type]) {
                     continue;
                 }
 
                 //format according to column type (fk, pk or other value-type)
-                sb.push("<td>");
+                var editable;
+                var andUpdate;
 
-                //if (column.readonly || column.__isPk) {
-                //    sb.push(column.__fk ? fkTables[column.__fk.Name][entry[column.Name]] : entry[column.Name]);
-                //}
-                //else {
-                var editable = column.__fk ? editableFk : editables[column.Type];
-                var andUpdate = true;
+                //keep fk itself - an additional column
+                if (column.__fk && column.__fk.__descColumn && column.keepFkWithDesc) {
+                    sb.push("<td>");
+                    editable = editables[column.Type];
+                    andUpdate = false;
+                    //clone without the fk prop
+                    var cloned = cloneObj(column);
+                    cloned.__fk = undefined;
+                    sb.push(editable(cloned, entry, andUpdate));
+                    sb.push("</td>");
+                }
+
+                sb.push("<td>");
+                editable = column.__fk ? editableFk : editables[column.Type];
+                andUpdate = true;
                 sb.push(editable(column, entry, andUpdate));
-                //}
                 sb.push("</td>");
             }
             sb.push("</tr>");
